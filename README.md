@@ -1,11 +1,12 @@
 # ClarityPC AI Assistant
 
-A Flask-based AI assistant that monitors your PC in real time and explains its health in plain English. It reads live CPU, memory, disk, and process data with `psutil`, and lets you chat with a Llama 3 model (via the Hugging Face Inference API) that answers using your machine's actual current state. A live dashboard visualizes everything with auto-refreshing charts.
+A Flask-based AI assistant that monitors your PC in real time and explains its health in plain English. It reads live CPU, memory, disk, and process data with `psutil`, and lets you chat with a local LLM (served by [Ollama](https://ollama.com)) that answers using your machine's actual current state. Because the model runs locally, there are no API keys and no per-token costs. A live dashboard visualizes everything with auto-refreshing charts.
 
 ## 🚀 Features
 
 - **Real-time monitoring**: Live CPU, memory, disk, and process stats with auto-refreshing charts
-- **AI system chat**: Ask about your PC in plain English — answers are grounded in your real-time metrics (Llama 3 via Hugging Face)
+- **AI system chat**: Ask about your PC in plain English — answers are grounded in your real-time metrics (Llama 3.2 via local Ollama)
+- **100% local & private**: The LLM runs on your own machine/server — no cloud, no API keys, no usage fees
 - **Automated health analysis**: Rule-based engine flags issues, gives recommendations, and scores overall system health (0–100)
 - **Quick actions**: Clean temp files and terminate runaway processes from the dashboard
 - **RESTful API**: Clean Flask backend that's easy to integrate or extend
@@ -13,14 +14,14 @@ A Flask-based AI assistant that monitors your PC in real time and explains its h
 ## 🛠️ Technology Stack
 
 - **Backend**: Python, Flask, Flask-CORS
-- **AI Integration**: Hugging Face Inference API (Meta Llama 3 8B Instruct)
+- **AI Integration**: Ollama (local LLM, OpenAI-compatible API) running Llama 3.2
 - **Frontend**: HTML, CSS, JavaScript, Chart.js
 - **System Monitoring**: psutil
 
 ## 📋 Prerequisites
 
 - Python 3.8 or higher
-- A Hugging Face access token — free ([get one here](https://huggingface.co/settings/tokens))
+- [Ollama](https://ollama.com) installed, with a model pulled: `ollama pull llama3.2:3b`
 - pip (Python package manager)
 - **Platform**: Built and tested on Windows (disk stats target the `C:` drive; adjust `app.py` for macOS/Linux)
 
@@ -49,13 +50,14 @@ A Flask-based AI assistant that monitors your PC in real time and explains its h
    pip install -r requirements.txt
    ```
 
-4. **Configure your token**
+4. **Configure Ollama (optional)**
    - Copy `.env.example` to `.env` in the `backend` directory
-   - Add your Hugging Face access token:
+   - Defaults assume Ollama runs locally. To use a remote/self-hosted Ollama, set:
      ```
-     HF_TOKEN=your_token_here
+     OLLAMA_BASE_URL=http://your-server-ip:11434/v1
+     OLLAMA_MODEL=llama3.2:3b
      ```
-   - (System monitoring works without a token; only the AI chat requires one.)
+   - (System monitoring works with no config; only the AI chat needs Ollama running.)
 
 ## 🚀 Usage
 
@@ -88,7 +90,7 @@ claritypc_ai/
 ├── backend/
 │   ├── app.py              # Main Flask application + API endpoints
 │   ├── requirements.txt    # Python dependencies
-│   ├── .env.example        # Template for your HF_TOKEN (copy to .env)
+│   ├── .env.example        # Ollama config template (copy to .env)
 │   └── venv/               # Virtual environment (not in git)
 ├── frontend/
 │   └── index.html          # Single-page dashboard (Chart.js)
@@ -98,9 +100,8 @@ claritypc_ai/
 
 ## 🔒 Security Notes
 
-- **Never commit your `.env` file or access tokens to version control**
-- The `.gitignore` file is configured to exclude sensitive files
-- Keep your Hugging Face token secure and rotate it if exposed
+- The AI runs locally via Ollama — no API keys or secrets to leak
+- The `.gitignore` file is configured to exclude your local `.env`
 - The `/processes/kill` and `/actions/cleanup` endpoints modify your system — review before exposing the server beyond localhost
 
 ## 🎯 Use Cases
@@ -140,8 +141,8 @@ This project is open source and available under the MIT License.
 
 ## 🙏 Acknowledgments
 
-- Hugging Face for the Inference API and open models
-- Meta for the Llama 3 model
+- Ollama for making local LLMs easy to run
+- Meta for the Llama 3.2 model
 - Flask and psutil for the backend infrastructure
 - Chart.js for the dashboard visualizations
 
@@ -151,4 +152,4 @@ If you have any questions or run into issues, please open an issue on GitHub or 
 
 ---
 
-**Note**: The AI chat uses the Hugging Face Inference API, which has a free tier. Review Hugging Face's usage limits if you plan to deploy this widely.
+**Note**: The AI chat runs entirely on your own hardware via Ollama — no cloud API, no keys, no per-token costs. Performance depends on your machine and the model size you choose.

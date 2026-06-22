@@ -4,7 +4,7 @@ import psutil
 import platform
 import os
 import sys
-from huggingface_hub import InferenceClient
+from openai import OpenAI
 import threading
 import webbrowser
 import time
@@ -33,13 +33,15 @@ def _load_dotenv():
 
 _load_dotenv()
 
-# Initialize Hugging Face client.
-# The token is read from the environment so it never lives in source control.
-# Set HF_TOKEN in a .env file or your shell (see .env.example).
-HF_TOKEN = os.getenv("HF_TOKEN")
-if not HF_TOKEN:
-    print("⚠ HF_TOKEN is not set — AI chat will be unavailable. See .env.example.")
-client = InferenceClient(api_key=HF_TOKEN) if HF_TOKEN else None
+# Initialize the AI client.
+# This points at an Ollama server (OpenAI-compatible API). Defaults to a local
+# Ollama install; override OLLAMA_BASE_URL / OLLAMA_MODEL in a .env file or your
+# shell to use a different host or model (see .env.example).
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:3b")
+# Ollama ignores the API key, but the SDK requires a non-empty string.
+client = OpenAI(base_url=OLLAMA_BASE_URL, api_key="ollama")
+print(f"🧠 AI model: {OLLAMA_MODEL} via {OLLAMA_BASE_URL}")
 
 # AI Chat Module
 class AIChat:
@@ -67,11 +69,6 @@ Top CPU Processes:"""
     @staticmethod
     def chat(user_message, stats, processes):
         """Send message to LLM with system context"""
-        if client is None:
-            return {
-                "success": False,
-                "message": "AI chat is unavailable: HF_TOKEN is not set. See .env.example."
-            }
         try:
             system_context = AIChat.get_system_context(stats, processes)
             
@@ -87,7 +84,7 @@ Answer the user's question based on this real-time data. If they ask about perfo
 reference specific processes and metrics. Keep responses under 150 words unless more detail is needed."""
             
             response = client.chat.completions.create(
-                model="meta-llama/Meta-Llama-3-8B-Instruct",
+                model=OLLAMA_MODEL,
                 messages=[{"role": "user", "content": full_prompt}],
                 max_tokens=500
             )

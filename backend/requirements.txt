@@ -1,4 +1,4 @@
 Flask==3.1.2
 flask-cors==6.0.2
 psutil==7.2.0
-huggingface_hub==1.2.3
+openai==2.14.0
