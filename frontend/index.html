@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClarityPC.AI Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { font-size: 2.5em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        
+        .status {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(0,255,0,0.2);
+            border: 2px solid #00ff00;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .status.offline { background: rgba(255,0,0,0.2); border-color: #ff0000; }
+        
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto 20px;
+        }
+        
+        .card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .card h2 { font-size: 1.3em; margin-bottom: 15px; color: #fff; }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+        
+        .metric-label { font-weight: 500; }
+        .metric-value { font-weight: bold; font-size: 1.1em; }
+        .chart-container { position: relative; height: 200px; margin-top: 15px; }
+        
+        .ai-panel {
+            max-width: 1400px;
+            margin: 20px auto;
+            background: rgba(138,43,226,0.15);
+            border: 2px solid rgba(138,43,226,0.5);
+            border-radius: 15px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .ai-title {
+            font-size: 1.8em;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .score-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .score-healthy { background: rgba(0,255,0,0.3); border: 2px solid #00ff00; }
+        .score-warning { background: rgba(255,193,7,0.3); border: 2px solid #ffc107; }
+        .score-critical { background: rgba(255,0,0,0.3); border: 2px solid #ff0000; }
+        
+        .ai-content { margin-bottom: 20px; }
+        .ai-summary { font-size: 1.1em; margin-bottom: 15px; padding: 15px; background: rgba(0,0,0,0.2); border-radius: 8px; }
+        
+        .ai-section {
+            margin: 15px 0;
+            padding: 15px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+        
+        .ai-section h3 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #ffc107;
+        }
+        
+        .ai-section ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .ai-section li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .ai-section li:last-child { border-bottom: none; }
+        
+        .chat-container {
+            margin-top: 25px;
+            border-top: 2px solid rgba(138,43,226,0.3);
+            padding-top: 20px;
+        }
+        
+        .chat-header {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .chat-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        
+        .chat-message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 10px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .chat-message.user {
+            background: rgba(0,123,255,0.3);
+            border-left: 4px solid #007bff;
+            margin-left: 20%;
+        }
+        
+        .chat-message.ai {
+            background: rgba(138,43,226,0.3);
+            border-left: 4px solid #8a2be2;
+            margin-right: 20%;
+        }
+        
+        .chat-message.ai.loading {
+            opacity: 0.6;
+        }
+        
+        .chat-sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+        .chat-text {
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        
+        .chat-input-container {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 2px solid rgba(138,43,226,0.5);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+            font-family: inherit;
+        }
+        
+        .chat-input:focus {
+            outline: none;
+            border-color: #8a2be2;
+            background: rgba(0,0,0,0.4);
+        }
+        
+        .chat-send-btn {
+            padding: 12px 25px;
+            background: rgba(138,43,226,0.5);
+            border: 2px solid #8a2be2;
+            border-radius: 10px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .chat-send-btn:hover {
+            background: rgba(138,43,226,0.7);
+            transform: translateY(-2px);
+        }
+        
+        .chat-send-btn:active {
+            transform: translateY(0);
+        }
+        
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .typing-indicator {
+            display: inline-flex;
+            gap: 5px;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #8a2be2;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: translateY(0); }
+            30% { opacity: 1; transform: translateY(-10px); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .processes-section { max-width: 1400px; margin: 20px auto; }
+        .processes-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(500px, 1fr)); gap: 20px; }
+        .process-list { max-height: 400px; overflow-y: auto; }
+        
+        .process-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .process-info { flex: 1; }
+        .process-name { font-weight: bold; margin-bottom: 4px; }
+        .process-stats { font-size: 0.85em; opacity: 0.8; }
+        
+        .kill-btn {
+            background: rgba(255,0,0,0.3);
+            border: 2px solid #ff0000;
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            transition: all 0.3s;
+        }
+        
+        .kill-btn:hover { background: rgba(255,0,0,0.5); transform: scale(1.05); }
+        
+        .actions-card { grid-column: 1 / -1; }
+        .action-buttons { display: flex; gap: 15px; flex-wrap: wrap; }
+        
+        .action-btn {
+            background: rgba(0,255,0,0.2);
+            border: 2px solid #00ff00;
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .action-btn:hover {
+            background: rgba(0,255,0,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,255,0,0.3);
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,255,0,0.3);
+            border: 2px solid #00ff00;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .notification.error { background: rgba(255,0,0,0.3); border-color: #ff0000; }
+        
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 4px; }
+        
+        .footer { text-align: center; margin-top: 30px; opacity: 0.7; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖥 ClarityPC.AI</h1>
+
+        <div class="status" id="status">● CONNECTING...</div>
+    </div>
+
+    <div class="ai-panel">
+        <div class="ai-header">
+            <div class="ai-title">🤖 AI System Assistant</div>
+            <div class="score-badge score-healthy" id="score-badge">-- / 100</div>
+        </div>
+        
+        <div class="ai-content">
+            <div class="ai-summary" id="ai-summary">Analyzing your system...</div>
+            
+            <div class="ai-section" id="issues-section" style="display: none;">
+                <h3>⚠️ Issues Detected</h3>
+                <ul id="issues-list"></ul>
+            </div>
+            
+            <div class="ai-section" id="recommendations-section" style="display: none;">
+                <h3>💡 Recommendations</h3>
+                <ul id="recommendations-list"></ul>
+            </div>
+        </div>
+        
+        <div class="chat-container">
+            <div class="chat-header">💬 Ask Me Anything About Your System</div>
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-message ai">
+                    <div class="chat-sender">🤖 AI Assistant</div>
+                    <div class="chat-text">Hi! I'm your AI system assistant. I can help you understand your PC's performance in plain English. Ask me things like:
+• "Why is my CPU usage high?"
+• "What's using all my memory?"
+• "Is my system healthy?"
+• "How can I speed up my PC?"</div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <input type="text" class="chat-input" id="chat-input" placeholder="Ask about your system performance..." />
+                <button class="chat-send-btn" id="chat-send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard">
+        <div class="card">
+            <h2>💻 CPU Usage</h2>
+            <div class="metric">
+                <span class="metric-label">Current Usage:</span>
+                <span class="metric-value" id="cpu-usage">--</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Core Count:</span>
+                <span class="metric-value" id="cpu-cores">--</span>
+            </div>
+            <div class="chart-container"><canvas id="cpuChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2>🧠 Memory Usage</h2>
+            <div class="metric">
+                <span class="metric-label">Used:</span>
+                <span class="metric-value" id="mem-used">--</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Total:</span>
+                <span class="metric-value" id="mem-total">--</span>
+            </div>
+            <div class="chart-container"><canvas id="memChart"></canvas></div>
+        </div>
+
+        <div class="card">
+            <h2>💾 Disk Usage (C:)</h2>
+            <div class="metric">
+                <span class="metric-label">Used:</span>
+                <span class="metric-value" id="disk-used">--</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Free:</span>
+                <span class="metric-value" id="disk-free">--</span>
+            </div>
+            <div class="chart-container"><canvas id="diskChart"></canvas></div>
+        </div>
+
+        <div class="card actions-card">
+            <h2>⚡ Quick Actions</h2>
+            <div class="action-buttons">
+                <button class="action-btn" onclick="cleanupSystem()">🧹 Clean Temp Files</button>
+                <button class="action-btn" onclick="refreshData()">🔄 Refresh Now</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="processes-section">
+        <div class="processes-grid">
+            <div class="card">
+                <h2>🔥 Top CPU Processes</h2>
+                <div class="process-list" id="top-cpu-list">
+                    <p style="text-align: center; opacity: 0.7;">Loading...</p>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🧠 Top Memory Processes</h2>
+                <div class="process-list" id="top-memory-list">
+                    <p style="text-align: center; opacity: 0.7;">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+	<p>Project By: Ameer Omer</span></p>
+        <p>Last updated: <span id="last-update">Never</span></p>
+        <p>ClarityPC.AI v.1 | Refresh Rate: 3 seconds</p>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000';
+        let cpuChart, memChart, diskChart;
+        let cpuHistory = [], memHistory = [];
+        let isSendingMessage = false;
+
+        // Chat functionality
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            
+            if (!message || isSendingMessage) return;
+            
+            isSendingMessage = true;
+            const sendBtn = document.getElementById('chat-send-btn');
+            sendBtn.disabled = true;
+            sendBtn.textContent = 'Sending...';
+            
+            // Add user message to chat
+            addChatMessage('user', message);
+            input.value = '';
+            
+            // Add loading indicator
+            const loadingId = addChatMessage('ai', null, true);
+            
+            try {
+                const response = await fetch(`${API_URL}/ai/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+                
+                const data = await response.json();
+                
+                // Remove loading indicator
+                document.getElementById(loadingId).remove();
+                
+                // Add AI response
+                if (data.success) {
+                    addChatMessage('ai', data.message);
+                } else {
+                    addChatMessage('ai', `Error: ${data.message}`, false, true);
+                }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                addChatMessage('ai', 'Sorry, I encountered an error. Please try again.', false, true);
+            }
+            
+            isSendingMessage = false;
+            sendBtn.disabled = false;
+            sendBtn.textContent = 'Send';
+        }
+
+        function addChatMessage(sender, text, isLoading = false, isError = false) {
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            const messageId = 'msg-' + Date.now();
+            messageDiv.id = messageId;
+            messageDiv.className = `chat-message ${sender}`;
+            if (isLoading) messageDiv.classList.add('loading');
+            
+            const senderDiv = document.createElement('div');
+            senderDiv.className = 'chat-sender';
+            senderDiv.textContent = sender === 'user' ? '👤 You' : '🤖 AI Assistant';
+            
+            const textDiv = document.createElement('div');
+            textDiv.className = 'chat-text';
+            
+            if (isLoading) {
+                textDiv.innerHTML = '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>';
+            } else {
+                textDiv.textContent = text;
+            }
+            
+            messageDiv.appendChild(senderDiv);
+            messageDiv.appendChild(textDiv);
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            return messageId;
+        }
+
+        // Allow Enter key to send message
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('chat-input').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isSendingMessage) {
+                    sendMessage();
+                }
+            });
+        });
+
+        function showNotification(message, isError = false) {
+            const n = document.createElement('div');
+            n.className = 'notification' + (isError ? ' error' : '');
+            n.textContent = message;
+            document.body.appendChild(n);
+            setTimeout(() => n.remove(), 3000);
+        }
+
+        function initCharts() {
+            const cfg = {
+                type: 'line',
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, max: 100, ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#fff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            };
+
+            cpuChart = new Chart(document.getElementById('cpuChart'), {
+                ...cfg,
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'CPU %', data: [], borderColor: '#00ff00', backgroundColor: 'rgba(0,255,0,0.1)', tension: 0.4, fill: true }]
+                }
+            });
+
+            memChart = new Chart(document.getElementById('memChart'), {
+                ...cfg,
+                data: {
+                    labels: [],
+                    datasets: [{ label: 'Memory %', data: [], borderColor: '#ffc107', backgroundColor: 'rgba(255,193,7,0.1)', tension: 0.4, fill: true }]
+                }
+            });
+
+            diskChart = new Chart(document.getElementById('diskChart'), {
+                type: 'doughnut',
+                data: { labels: ['Used', 'Free'], datasets: [{ data: [0, 100], backgroundColor: ['#ff6384', '#36a2eb'] }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#fff' } } } }
+            });
+        }
+
+        async function updateStats() {
+            try {
+                const r = await fetch(`${API_URL}/system/all`);
+                const d = await r.json();
+
+                document.getElementById('status').textContent = '● ONLINE';
+                document.getElementById('status').classList.remove('offline');
+
+                document.getElementById('cpu-usage').textContent = d.cpu.usage_percent + '%';
+                document.getElementById('cpu-cores').textContent = d.cpu.core_count + ' cores';
+                cpuHistory.push(d.cpu.usage_percent);
+                if (cpuHistory.length > 20) cpuHistory.shift();
+                cpuChart.data.labels = cpuHistory.map(() => '');
+                cpuChart.data.datasets[0].data = cpuHistory;
+                cpuChart.update('none');
+
+                document.getElementById('mem-used').textContent = d.memory.used_gb + ' GB';
+                document.getElementById('mem-total').textContent = d.memory.total_gb + ' GB';
+                memHistory.push(d.memory.percent_used);
+                if (memHistory.length > 20) memHistory.shift();
+                memChart.data.labels = memHistory.map(() => '');
+                memChart.data.datasets[0].data = memHistory;
+                memChart.update('none');
+
+                document.getElementById('disk-used').textContent = d.disk.used_gb + ' GB';
+                document.getElementById('disk-free').textContent = (d.disk.total_gb - d.disk.used_gb).toFixed(2) + ' GB';
+                diskChart.data.datasets[0].data = [d.disk.percent_used, 100 - d.disk.percent_used];
+                diskChart.update('none');
+
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+            } catch (e) {
+                document.getElementById('status').textContent = '● OFFLINE';
+                document.getElementById('status').classList.add('offline');
+            }
+        }
+
+        async function updateAIAnalysis() {
+            try {
+                const r = await fetch(`${API_URL}/ai/analyze`);
+                const d = await r.json();
+                
+                if (d.success) {
+                    const analysis = d.analysis;
+                    
+                    // Update score badge
+                    const badge = document.getElementById('score-badge');
+                    badge.textContent = analysis.performance_score + ' / 100';
+                    badge.className = 'score-badge';
+                    if (analysis.status === 'healthy') badge.classList.add('score-healthy');
+                    else if (analysis.status === 'warning') badge.classList.add('score-warning');
+                    else badge.classList.add('score-critical');
+                    
+                    // Update summary
+                    document.getElementById('ai-summary').textContent = analysis.summary;
+                    
+                    // Update issues
+                    const issuesSection = document.getElementById('issues-section');
+                    const issuesList = document.getElementById('issues-list');
+                    if (analysis.issues.length > 0) {
+                        issuesSection.style.display = 'block';
+                        issuesList.innerHTML = analysis.issues.map(i => `<li>${i}</li>`).join('');
+                    } else {
+                        issuesSection.style.display = 'none';
+                    }
+                    
+                    // Update recommendations
+                    const recsSection = document.getElementById('recommendations-section');
+                    const recsList = document.getElementById('recommendations-list');
+                    if (analysis.recommendations.length > 0) {
+                        recsSection.style.display = 'block';
+                        recsList.innerHTML = analysis.recommendations.map(r => `<li>${r}</li>`).join('');
+                    } else {
+                        recsSection.style.display = 'none';
+                    }
+                }
+            } catch (e) {
+                console.error('AI analysis error:', e);
+            }
+        }
+
+        async function updateProcesses() {
+            try {
+                const r = await fetch(`${API_URL}/processes/top`);
+                const d = await r.json();
+
+                document.getElementById('top-cpu-list').innerHTML = d.top_cpu.map(p => `
+                    <div class="process-item">
+                        <div class="process-info">
+                            <div class="process-name">${p.name}</div>
+                            <div class="process-stats">CPU: ${p.cpu_percent}% | Memory: ${p.memory_percent}% | PID: ${p.pid}</div>
+                        </div>
+                        <button class="kill-btn" onclick="killProcess(${p.pid}, '${p.name}')">Kill</button>
+                    </div>
+                `).join('');
+
+                document.getElementById('top-memory-list').innerHTML = d.top_memory.map(p => `
+                    <div class="process-item">
+                        <div class="process-info">
+                            <div class="process-name">${p.name}</div>
+                            <div class="process-stats">Memory: ${p.memory_percent}% | CPU: ${p.cpu_percent}% | PID: ${p.pid}</div>
+                        </div>
+                        <button class="kill-btn" onclick="killProcess(${p.pid}, '${p.name}')">Kill</button>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        }
+
+        async function killProcess(pid, name) {
+            if (!confirm(`Kill "${name}" (PID: ${pid})?`)) return;
+            try {
+                const r = await fetch(`${API_URL}/processes/kill/${pid}`, { method: 'POST' });
+                const d = await r.json();
+                showNotification(d.success ? `✓ ${d.message}` : `✗ ${d.message}`, !d.success);
+                if (d.success) updateProcesses();
+            } catch (e) {
+                showNotification('✗ Error killing process', true);
+            }
+        }
+
+        async function cleanupSystem() {
+            if (!confirm('Clean temporary files?')) return;
+            try {
+                const r = await fetch(`${API_URL}/actions/cleanup`, { method: 'POST' });
+                const d = await r.json();
+                showNotification(d.success ? `✓ ${d.results.join(', ')}` : `✗ ${d.message}`, !d.success);
+            } catch (e) {
+                showNotification('✗ Cleanup failed', true);
+            }
+        }
+
+        function refreshData() {
+            updateStats();
+            updateProcesses();
+            updateAIAnalysis();
+            showNotification('✓ Data refreshed!');
+        }
+
+        initCharts();
+        updateStats();
+        updateProcesses();
+        updateAIAnalysis();
+        setInterval(updateStats, 3000);
+        setInterval(updateProcesses, 5000);
+        setInterval(updateAIAnalysis, 10000);
+    </script>
+</body>
+</html>
