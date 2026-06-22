@@ -1,18 +1,16 @@
 # ClarityPC AI
 
+<p align="center">
+  <a href="docs/demo.html">
+    <img src="docs/banner.gif" alt="ClarityPC AI demo — cycling through the real-time dashboard, AI system assistant, plain-English chat, and top processes" width="100%">
+  </a>
+</p>
+
+<p align="center"><em>Real-time dashboard · AI health analysis · plain-English chat · process management &nbsp;—&nbsp; <a href="docs/demo.html"><b>open the interactive demo →</b></a></em></p>
+
 An AI-powered PC performance dashboard — an internal tool for collecting and visualizing system metrics and operational data in real time. A Flask backend gathers live CPU, memory, disk, and process data with `psutil` and surfaces it on a single-page dashboard with auto-refreshing charts. A built-in assistant, powered by a local LLM (served by [Ollama](https://ollama.com)), interprets the live data and answers questions about system health in plain English. Because the model runs locally, there are no API keys and no per-token costs.
 
-## 📸 Screenshots
-
-| Real-time dashboard | AI system assistant |
-| :---: | :---: |
-| ![ClarityPC dashboard with CPU, memory and disk cards](docs/screenshots/dashboard.png) | ![AI System Assistant showing health score and detected issues](docs/screenshots/ai-system-assistant.png) |
-| **AI assistant chat** | **Top processes** |
-| ![AI assistant chat answering questions about the PC](docs/screenshots/ai-chat.png) | ![Top CPU and memory processes with kill buttons](docs/screenshots/top-processes.png) |
-
-## 🎬 Interactive Demo
-
-A self-contained, no-install walkthrough of the dashboard is bundled at [`docs/demo.html`](docs/demo.html) — download it and open it in any browser to click through the UI with sample data (no backend or Ollama required).
+> The banner above is a self-contained walkthrough. For a clickable version, download [`docs/demo.html`](docs/demo.html) and open it in any browser — sample data, no backend or Ollama required. Individual screens live in [`docs/screenshots/`](docs/screenshots).
 
 ## 🚀 Features
 
