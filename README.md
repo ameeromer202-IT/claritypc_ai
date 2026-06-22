@@ -1,6 +1,6 @@
-# ClarityPC AI Assistant
+# ClarityPC AI
 
-A Flask-based AI assistant that monitors your PC in real time and explains its health in plain English. It reads live CPU, memory, disk, and process data with `psutil`, and lets you chat with a local LLM (served by [Ollama](https://ollama.com)) that answers using your machine's actual current state. Because the model runs locally, there are no API keys and no per-token costs. A live dashboard visualizes everything with auto-refreshing charts.
+An AI-powered PC performance dashboard — an internal tool for collecting and visualizing system metrics and operational data in real time. A Flask backend gathers live CPU, memory, disk, and process data with `psutil` and surfaces it on a single-page dashboard with auto-refreshing charts. A built-in assistant, powered by a local LLM (served by [Ollama](https://ollama.com)), interprets the live data and answers questions about system health in plain English. Because the model runs locally, there are no API keys and no per-token costs.
 
 ## 🚀 Features
 
