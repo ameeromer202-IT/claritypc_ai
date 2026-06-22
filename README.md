@@ -2,6 +2,18 @@
 
 An AI-powered PC performance dashboard — an internal tool for collecting and visualizing system metrics and operational data in real time. A Flask backend gathers live CPU, memory, disk, and process data with `psutil` and surfaces it on a single-page dashboard with auto-refreshing charts. A built-in assistant, powered by a local LLM (served by [Ollama](https://ollama.com)), interprets the live data and answers questions about system health in plain English. Because the model runs locally, there are no API keys and no per-token costs.
 
+## 📸 Screenshots
+
+| Real-time dashboard | AI system assistant |
+| :---: | :---: |
+| ![ClarityPC dashboard with CPU, memory and disk cards](docs/screenshots/dashboard.png) | ![AI System Assistant showing health score and detected issues](docs/screenshots/ai-system-assistant.png) |
+| **AI assistant chat** | **Top processes** |
+| ![AI assistant chat answering questions about the PC](docs/screenshots/ai-chat.png) | ![Top CPU and memory processes with kill buttons](docs/screenshots/top-processes.png) |
+
+## 🎬 Interactive Demo
+
+A self-contained, no-install walkthrough of the dashboard is bundled at [`docs/demo.html`](docs/demo.html) — download it and open it in any browser to click through the UI with sample data (no backend or Ollama required).
+
 ## 🚀 Features
 
 - **Real-time monitoring**: Live CPU, memory, disk, and process stats with auto-refreshing charts
